@@ -45,6 +45,28 @@ def load_tickers(path: Path) -> list[str]:
     return tickers
 
 
+def prompt_tickers() -> list[str]:
+    """Ask the user to type ticker symbols and return them as a list."""
+    print("Enter ASX tickers separated by spaces or commas (without .AX suffix).")
+    print("  Example: VGS VAS NDQ CBA BHP")
+    print()
+
+    while True:
+        raw = input("Tickers: ").strip()
+        if not raw:
+            print("  [!] Please enter at least one ticker. Try again.")
+            continue
+
+        # Accept comma- or space-separated input, or a mix of both.
+        tickers = [t.upper() for t in raw.replace(",", " ").split() if t]
+        if not tickers:
+            print("  [!] No valid tickers found. Try again.")
+            continue
+
+        print(f"  Using: {', '.join(tickers)}")
+        return tickers
+
+
 # ---------------------------------------------------------------------------
 # User input / validation
 # ---------------------------------------------------------------------------
@@ -216,9 +238,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--tickers",
         type=Path,
-        default=TICKERS_FILE,
+        default=None,
         metavar="FILE",
-        help="Path to tickers file (default: tickers.txt next to this script)",
+        help="Load tickers from a file instead of prompting (one ticker per line, # comments OK)",
     )
     return parser
 
@@ -231,17 +253,18 @@ def main() -> None:
     parser = build_arg_parser()
     args = parser.parse_args()
 
-    tickers_path: Path = args.tickers
-    if not tickers_path.exists():
-        parser.error(f"Tickers file not found: {tickers_path}")
-
-    try:
-        tickers = load_tickers(tickers_path)
-    except ValueError as exc:
-        parser.error(str(exc))
-        return  # unreachable; silences type-checker
-
-    print(f"Loaded {len(tickers)} ticker(s) from {tickers_path.name}")
+    if args.tickers is not None:
+        tickers_path: Path = args.tickers
+        if not tickers_path.exists():
+            parser.error(f"Tickers file not found: {tickers_path}")
+        try:
+            tickers = load_tickers(tickers_path)
+        except ValueError as exc:
+            parser.error(str(exc))
+            return
+        print(f"Loaded {len(tickers)} ticker(s) from {tickers_path.name}")
+    else:
+        tickers = prompt_tickers()
 
     timeframe = prompt_timeframe()
 
