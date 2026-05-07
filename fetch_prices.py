@@ -179,6 +179,8 @@ def fetch_ticker(
 def fetch_all(
     tickers: list[str],
     timeframe: dict[str, str],
+    *,
+    inner: bool = False,
 ) -> pd.DataFrame:
     """Fetch all tickers and return a combined wide DataFrame."""
     series_list: list[pd.Series] = []
@@ -196,8 +198,8 @@ def fetch_all(
     if not series_list:
         raise RuntimeError("No data was retrieved for any ticker.")
 
-    # Outer join on date index — NaN where a ticker didn't trade / didn't exist yet.
-    combined = pd.concat(series_list, axis=1, join="outer")
+    join = "inner" if inner else "outer"
+    combined = pd.concat(series_list, axis=1, join=join)
     combined.sort_index(inplace=True)
     combined.index.name = "Date"
     return combined
@@ -231,7 +233,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=(
             "examples:\n"
             "  python fetch_prices.py\n"
-            "  python fetch_prices.py --tickers my_tickers.txt\n"
+            "  python fetch_prices.py --inner\n"
+            "  python fetch_prices.py --tickers my_tickers.txt --inner\n"
         ),
     )
     parser.add_argument(
@@ -240,6 +243,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         metavar="FILE",
         help="Load tickers from a file instead of prompting (one ticker per line, # comments OK)",
+    )
+    parser.add_argument(
+        "--inner",
+        action="store_true",
+        default=False,
+        help="Keep only dates where every ticker has data (inner join). Default: keep all dates (outer join).",
     )
     return parser
 
@@ -267,8 +276,9 @@ def main() -> None:
 
     timeframe = prompt_timeframe()
 
-    print(f"\nFetching {len(tickers)} ticker(s) …\n")
-    df = fetch_all(tickers, timeframe)
+    join_mode = "inner (no blank days)" if args.inner else "outer (keep all dates)"
+    print(f"\nFetching {len(tickers)} ticker(s) … [{join_mode}]\n")
+    df = fetch_all(tickers, timeframe, inner=args.inner)
 
     output_path = resolve_output_path(timeframe, df)
     save_csv(df, output_path)
