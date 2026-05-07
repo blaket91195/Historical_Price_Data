@@ -180,7 +180,7 @@ def fetch_all(
     tickers: list[str],
     timeframe: dict[str, str],
     *,
-    inner: bool = False,
+    inner: bool = True,
 ) -> pd.DataFrame:
     """Fetch all tickers and return a combined wide DataFrame."""
     series_list: list[pd.Series] = []
@@ -233,8 +233,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         epilog=(
             "examples:\n"
             "  python fetch_prices.py\n"
-            "  python fetch_prices.py --inner\n"
-            "  python fetch_prices.py --tickers my_tickers.txt --inner\n"
+            "  python fetch_prices.py --outer\n"
+            "  python fetch_prices.py --tickers my_tickers.txt --outer\n"
         ),
     )
     parser.add_argument(
@@ -245,10 +245,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Load tickers from a file instead of prompting (one ticker per line, # comments OK)",
     )
     parser.add_argument(
-        "--inner",
+        "--outer",
         action="store_true",
         default=False,
-        help="Keep only dates where every ticker has data (inner join). Default: keep all dates (outer join).",
+        help="Keep all dates even if some tickers have no data (outer join). Default: drop dates with any missing data (inner join).",
     )
     return parser
 
@@ -276,9 +276,9 @@ def main() -> None:
 
     timeframe = prompt_timeframe()
 
-    join_mode = "inner (no blank days)" if args.inner else "outer (keep all dates)"
+    join_mode = "outer (keep all dates)" if args.outer else "inner (no blank days)"
     print(f"\nFetching {len(tickers)} ticker(s) … [{join_mode}]\n")
-    df = fetch_all(tickers, timeframe, inner=args.inner)
+    df = fetch_all(tickers, timeframe, inner=not args.outer)
 
     output_path = resolve_output_path(timeframe, df)
     save_csv(df, output_path)
