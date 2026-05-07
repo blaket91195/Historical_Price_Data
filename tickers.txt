@@ -1,34 +1,34 @@
-# ASX Tickers — one per line, no .AX suffix needed
+# ASX Tickers — include the .AX suffix for ASX-listed securities
 # Blank lines and lines starting with # are ignored
 
 # Broad market / diversified ETFs
-VGS
-VAS
-VGE
-IVV
-STW
+VGS.AX
+VAS.AX
+VGE.AX
+IVV.AX
+STW.AX
 
 # Thematic ETFs
-NDQ
-HACK
-FANG
-TECH
+NDQ.AX
+HACK.AX
+FANG.AX
+TECH.AX
 
 # Property
-VAP
+VAP.AX
 
 # Fixed income
-VAF
-VBND
+VAF.AX
+VBND.AX
 
 # Blue-chip stocks
-CBA
-BHP
-CSL
-GMG
-WES
-MQG
-NAB
-ANZ
-WBC
-RIO
+CBA.AX
+BHP.AX
+CSL.AX
+GMG.AX
+WES.AX
+MQG.AX
+NAB.AX
+ANZ.AX
+WBC.AX
+RIO.AX

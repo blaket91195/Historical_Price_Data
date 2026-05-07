@@ -9,8 +9,7 @@ column is therefore redundant and is not used.
 from __future__ import annotations
 
 import argparse
-import sys
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -22,7 +21,6 @@ import yfinance as yf
 
 VALID_PERIODS = {"1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"}
 DATE_FMT = "%Y-%m-%d"
-EXCHANGE_SUFFIX = ".AX"
 DATA_DIR = Path(__file__).parent / "data"
 TICKERS_FILE = Path(__file__).parent / "tickers.txt"
 
@@ -47,8 +45,10 @@ def load_tickers(path: Path) -> list[str]:
 
 def prompt_tickers() -> list[str]:
     """Ask the user to type ticker symbols and return them as a list."""
-    print("Enter ASX tickers separated by spaces or commas (without .AX suffix).")
-    print("  Example: VGS VAS NDQ CBA BHP")
+    print("Enter tickers separated by spaces or commas.")
+    print("  Include the exchange suffix so there is no ambiguity:")
+    print("    ASX stocks/ETFs : VGS.AX  NDQ.AX  CBA.AX")
+    print("    US stocks       : AAPL    MSFT    SPY")
     print()
 
     while True:
@@ -168,7 +168,7 @@ def fetch_ticker(
 
     series = df["Close"].dropna()
     series.index = pd.to_datetime(series.index).date  # type: ignore[assignment]
-    series.name = symbol.replace(EXCHANGE_SUFFIX, "")
+    series.name = symbol
     return series
 
 
@@ -183,15 +183,14 @@ def fetch_all(
     """Fetch all tickers and return a combined wide DataFrame."""
     series_list: list[pd.Series] = []
 
-    for base in tickers:
-        symbol = base + EXCHANGE_SUFFIX
+    for symbol in tickers:
         s = fetch_ticker(symbol, **timeframe)  # type: ignore[arg-type]
 
         if s is None or s.empty:
-            print(f"  {base:<12} rows=0   range=n/a          status=FAILED")
+            print(f"  {symbol:<16} rows=0   range=n/a          status=FAILED")
         else:
             date_range = f"{s.index[0]} → {s.index[-1]}"
-            print(f"  {base:<12} rows={len(s):<5} range={date_range}  status=OK")
+            print(f"  {symbol:<16} rows={len(s):<5} range={date_range}  status=OK")
             series_list.append(s)
 
     if not series_list:
